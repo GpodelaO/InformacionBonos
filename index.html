@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora de Bonos</title>
+  <!-- PapaParse para parsear CSV de Google Sheets -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+
+  <style>
+    /* ======= GENERAL RESET & BODY ======= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #eef2f7; /* Un fondo claro y limpio */
+      color: #333;
+    }
+
+    /* ======= TITULO PRINCIPAL ======= */
+    h1 {
+      text-align: center;
+      color: #6241AB;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 2rem;
+    }
+
+    /* ======= CONTENEDOR PRINCIPAL ======= */
+    .container {
+      width: 95%;
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+    /* ======= LOGO ======= */
+    .logo-container {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .logo-container img {
+      width: 150px;
+      height: auto;
+    }
+
+    /* ======= AVISO ======= */
+    .aviso {
+      text-align: center;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #6241AB;
+      border-radius: 8px;
+      padding: 15px;
+      color: #444;
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 800px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .aviso:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* ======= INPUTS SECTION ======= */
+    .input-group-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    .input-group {
+      width: 50%;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    button {
+      font-size: 1rem;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      width: 100%;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    button {
+      background: linear-gradient(135deg, #6241AB, #4e3190);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #4e3190, #6241AB);
+      transform: scale(1.03);
+    }
+
+    /* ======= DATA + CALCULATIONS LAYOUT ======= */
+    .data-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ======= CARD BASE ======= */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      min-width: 300px;
+      flex: 1 1 300px;
+    }
+
+    /* ======= Titulito para cada card ======= */
+    .card-title {
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #6241AB;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+
+    /* ======= USER DATA CARD ======= */
+    .user-data div {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+      font-size: 0.95rem;
+    }
+    .user-data div:last-child {
+      border-bottom: none;
+    }
+    .user-data strong {
+      color: #6241AB;
+      margin-right: 10px;
+    }
+
+    /* ======= CALCULATION CARD ======= */
+    .calculation-section label {
+      margin-right: 10px;
+      color: #6241AB;
+      font-weight: 500;
+    }
+    .calculation-section div {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+      font-size: 0.95rem;
+    }
+    .calculation-section div:last-child {
+      border-bottom: none;
+    }
+    #pcaCalculada,
+    #bonoCalculado {
+      color: #6241AB;
+      font-weight: 600;
+      margin-left: 15px;
+    }
+
+    /* ======= SECCION EXTRA: BANDAS y BONO DIRECTO ======= */
+    .banda-bonus-section {
+      width: 100%;
+      margin-top: 20px;
+      display: none; /* se mostrará dinámicamente */
+    }
+    .banda-bonus-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .diferencia {
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #6241AB;
+      padding: 10px;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .diferencia ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .diferencia li {
+      margin-bottom: 8px;
+      padding: 10px;
+      background: #f7f7ff;
+      border-radius: 8px;
+      border-left: 4px solid #6241AB;
+      transition: background 0.3s ease;
+    }
+    .diferencia li:hover {
+      background: #e7e5f9;
+    }
+    .diferencia li:last-child {
+      margin-bottom: 0;
+    }
+
+    .bonus-directo-section {
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #6241AB;
+      padding: 15px 20px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .bonus-directo-section h3 {
+      text-align: center;
+      margin: 0 0 10px 0;
+      color: #6241AB;
+      text-transform: uppercase;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    #bonusDirectoInfo p {
+      margin: 8px 0;
+      line-height: 1.4;
+    }
+    #bonusDirectoInfo strong {
+      color: #6241AB;
+    }
+
+    @media (max-width: 768px) {
+      .input-group {
+        width: 90%;
+      }
+      .data-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .card {
+        width: 90%;
+        margin-bottom: 20px;
+      }
+      .banda-bonus-section {
+        width: 90%;
+        margin: 20px auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- LOGO -->
+  <div class="logo-container">
+    <img src="LOGO.png" alt="Logo" />
+  </div>
+  <!-- TITULO -->
+  <h1>Información De Bonos</h1>
+
+  <!-- AVISO -->
+  <div class="aviso">
+    La información presentada corresponde a datos consolidados al cierre del mes anterior. <br />
+    Los montos mostrados son aproximados y tienen como propósito ofrecer una referencia sobre tu progreso trimestral.
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="container">
+
+    <!-- APARTADO PARA BUSCAR USUARIO -->
+    <div class="input-group-container">
+      <div class="input-group">
+        <label for="usuarioInput">Buscar Usuario:</label>
+        <input type="text" id="usuarioInput" placeholder="Ingrese el ID del usuario" />
+        <button id="buscarUsuario">Buscar</button>
+      </div>
+    </div>
+
+    <div class="data-container">
+      <!-- TARJETA DATOS DE USUARIO -->
+      <div id="userData" class="user-data card" style="display: none;">
+      </div>
+
+      <!-- TARJETA DE INPUTS Y VALORES CALCULADOS -->
+      <div class="calculation-section card" id="calculos" style="display: none;">
+        <h2 class="card-title">Calculadora Bono</h2>
+
+        <div>
+          <label for="arrastreInput">Arrastre:</label>
+          <input type="text" id="arrastreInput" value="0" />
+        </div>
+        <div>
+          <label for="ventaNuevaInput">Venta Nueva:</label>
+          <input type="text" id="ventaNuevaInput" value="0" />
+        </div>
+        <div>
+          <label for="pcaCalculada">PCA Calculada:</label>
+          <span id="pcaCalculada">$0.00</span>
+        </div>
+        <div>
+          <label for="persistenciaInput">Persistencia (%):</label>
+          <input type="number" id="persistenciaInput" value="0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- APARTADO SEPARADO: BANDAS Y BONO DIRECTO -->
+    <div class="banda-bonus-section" id="bandaBonusSection">
+      <div class="banda-bonus-container">
+        <h2 class="card-title" style="margin-top: 0;">Bandas Estimadas</h2>
+
+        <div class="diferencia">
+          <ul id="bandasDiferencia"></ul>
+        </div>
+        <div id="bonusDirectoSection" class="bonus-directo-section">
+          <h3>Informacion Estimada de Bono</h3>
+          <div id="bonusDirectoInfo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL CSV de tu Google Sheets
+    const googleSheetCSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhZ5SjhMC3cn4xemgNL4j7zsdD2hWWkdhrrwFXrFo6F26kN9GRzh7BfF9f5iRLrqZfTM02GDJ7t1or/pub?output=csv";
+
+    let rows = [];
+
+    // Tablas de bandas
+    const tablaConsolidado = [825000, 725000, 625000, 525000, 462500, 400000, 337500, 275000, 212500, 150000];
+    const tablaCrecimiento = [775000, 687000, 612000, 512000, 450000, 387500, 325000, 262500, 200000, 137500];
+    const tablaNuevo = [780000, 680000, 580000, 480000, 420000, 360000, 300000, 240000, 180000, 120000];
+
+    // Referencias
+    const buscarUsuarioBtn = document.getElementById("buscarUsuario");
+    const usuarioInput = document.getElementById("usuarioInput");
+    const userDataDiv = document.getElementById("userData");
+    const arrastreInput = document.getElementById("arrastreInput");
+    const ventaNuevaInput = document.getElementById("ventaNuevaInput");
+    const persistenciaInput = document.getElementById("persistenciaInput");
+    const pcaCalculadaDiv = document.getElementById("pcaCalculada");
+    const bandasDiferenciaUl = document.getElementById("bandasDiferencia");
+    const bandaBonusSection = document.getElementById("bandaBonusSection");
+
+    document.addEventListener("DOMContentLoaded", () => {
+      Papa.parse(googleSheetCSV_URL, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          rows = results.data;
+          console.log("Datos cargados:", rows.length, "filas");
+        },
+        error: function(err) {
+          alert("Error al leer la hoja de Google Sheets: " + err);
+        }
+      });
+
+      // Formateo en blur para Arrastre y VentaNueva
+      arrastreInput.addEventListener("blur", () => {
+        arrastreInput.value = formatCurrencyNumberOnly(arrastreInput.value);
+      });
+      ventaNuevaInput.addEventListener("blur", () => {
+        ventaNuevaInput.value = formatCurrencyNumberOnly(ventaNuevaInput.value);
+      });
+    });
+
+    buscarUsuarioBtn.addEventListener("click", () => {
+      const usuario = usuarioInput.value.trim();
+      if (!usuario) {
+        alert("Por favor, ingrese un ID de usuario.");
+        return;
+      }
+
+      if (!rows || rows.length === 0) {
+        alert("No hay datos cargados o el CSV está vacío.");
+        return;
+      }
+
+      const row = rows.find(r => r["Usuario"] == usuario);
+      if (!row) {
+        alert("Usuario no encontrado.");
+        return;
+      }
+
+      mostrarUsuario(row);
+    });
+
+    function mostrarUsuario(row) {
+      const pca = parseFloat(row["PCA"] || 0);
+      const persistencia = parseFloat(row["Persistencia"] || 0);
+      const porcentaje = parseFloat(row["Porcentaje De Bono (%)"] || 0);
+      const bono = parseFloat(row["Bono"] || 0);
+      const adelanto = parseFloat(row["Adelanto"] || 0);
+      const bononeto = parseFloat(row["Bono Neto"] || 0);
+
+      // NUEVO DATO => "Bono Persistencia" => Se asume que es un número normal (ej "15" => 15%)
+      const bonoPersistencia = parseFloat(row["Bono Persistencia"] || 0);
+
+      userDataDiv.style.display = "block";
+
+      // Reinsertamos el h2
+      userDataDiv.innerHTML = `
+        <h2 class="card-title">Información Trimestral de Agente</h2>
+      `;
+
+      // Y creamos los campos, incluyendo Bono Persistencia con formato de %
+      const fields = [
+        { label: "Usuario", value: row["Usuario"] || "" },
+        { label: "Nombre", value: row["Nombre"] || "" },
+        { label: "Tipo de Agente", value: row["Tipo de Agente"] || "" },
+        { label: "PCA", value: formatCurrency(pca) },
+        { label: "Persistencia (%)", value: persistencia.toFixed(2) },
+        { label: "Porcentaje De Bono (%)", value: porcentaje.toFixed(2) },
+        { label: "Bono", value: formatCurrency(bono) },
+        { label: "Adelanto", value: formatCurrency(adelanto) },
+        { label: "Bono Neto", value: formatCurrency(bononeto) },
+
+        // AQUÍ el campo nuevo: "Bono Persistencia" en formato %
+        { label: "Bono Persistencia", value: formatPercent(bonoPersistencia) }
+      ];
+
+      fields.forEach((field) => {
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>${field.label}:</strong> <span>${field.value}</span>`;
+        userDataDiv.appendChild(div);
+      });
+
+      persistenciaInput.value = persistencia.toFixed(2);
+
+      document.getElementById("calculos").style.display = "block";
+      bandaBonusSection.style.display = "none";
+
+      [arrastreInput, ventaNuevaInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          calcularPCA(pca, row["Tipo de Agente"]);
+        });
+      });
+    }
+
+    function calcularPCA(pcaBase, tipoAgente) {
+      const arrastre = parseFloat(cleanCurrency(arrastreInput.value)) || 0;
+      const ventaNueva = parseFloat(cleanCurrency(ventaNuevaInput.value)) || 0;
+
+      const pcaCalculada = pcaBase + arrastre + ventaNueva;
+      pcaCalculadaDiv.textContent = formatCurrency(pcaCalculada);
+
+      let bandas;
+      const tipo = (tipoAgente || "").trim().toLowerCase();
+
+      if (tipo === "consolidado") {
+        bandas = tablaConsolidado;
+      } else if (tipo === "crecimiento") {
+        bandas = tablaCrecimiento;
+      } else if (tipo === "nuevo") {
+        bandas = tablaNuevo;
+      } else {
+        bandasDiferenciaUl.innerHTML = "<li>Tipo de Agente inválido</li>";
+        bandaBonusSection.style.display = "block";
+        return;
+      }
+
+      if (!bandas || bandas.length === 0) {
+        bandasDiferenciaUl.innerHTML = "<li>No hay bandas disponibles</li>";
+        bandaBonusSection.style.display = "block";
+        return;
+      }
+
+      const bandaMaxima = bandas[0];
+      let bandaMasCercana = null;
+      let diferenciaMinima = Infinity;
+
+      for (let i = 0; i < bandas.length; i++) {
+        const banda = bandas[i];
+        const diff = banda - pcaCalculada;
+        if (diff > 0 && diff < diferenciaMinima) {
+          diferenciaMinima = diff;
+          bandaMasCercana = banda;
+        }
+      }
+
+      let html = `<li><strong>Banda Máxima:</strong> ${formatCurrency(bandaMaxima)}</li>`;
+      if (bandaMasCercana) {
+        html += `
+          <li>
+            <strong>Banda Más Cercana:</strong> ${formatCurrency(bandaMasCercana)}
+            <br/>Te faltan: ${formatCurrency(diferenciaMinima)}
+          </li>
+        `;
+      } else {
+        html += `
+          <li>
+            <strong>Banda Más Cercana:</strong>
+            ¡Felicidades! Has superado la banda más alta.
+          </li>
+        `;
+      }
+      bandasDiferenciaUl.innerHTML = html;
+
+      bandaBonusSection.style.display = "block";
+      calcularBonoDirecto(pcaCalculada, tipoAgente);
+    }
+
+    function calcularBonoDirecto(pcaCalculada, tipoAgente) {
+      const persistencia = parseFloat(persistenciaInput.value || 0);
+      const bonusSection = document.getElementById("bonusDirectoSection");
+      const bonusInfoDiv = document.getElementById("bonusDirectoInfo");
+
+      bonusInfoDiv.innerHTML = "";
+
+      if (!persistencia || persistencia <= 0) {
+        bonusSection.style.display = "block";
+        bonusInfoDiv.innerHTML = `
+          <p>Ingrese un valor de Persistencia válido para calcular el Bono Directo.</p>
+        `;
+        return;
+      }
+
+      // =========== TABLAS DE BONOS DIRECTO (ejemplo parcial) ===========
+      const bonosConsolidado = [
+        { minPCA: 825000, p81: 34, p86: 37, p91: 42 },
+        { minPCA: 725000, p81: 30, p86: 34, p91: 39 },
+        { minPCA: 625000, p81: 24, p86: 28, p91: 33 },
+        { minPCA: 525000, p81: 21, p86: 25, p91: 30 },
+        { minPCA: 462500, p81: 19, p86: 22, p91: 28 },
+        { minPCA: 400000, p81: 17, p86: 19, p91: 25 },
+        { minPCA: 337500, p81: 13, p86: 15, p91: 20 },
+        { minPCA: 275000, p81: 8, p86: 13, p91: 17 },
+        { minPCA: 212000, p81: 5, p86: 11, p91: 15 },
+        { minPCA: 150000, p81: 2, p86: 9, p91: 11 }
+      ];
+      const bonosCrecimiento = [
+        { minPCA: 775000, p81: 36, p86: 39, p91: 44 },
+        { minPCA: 687000, p81: 31, p86: 35, p91: 40 },
+        { minPCA: 612000, p81: 26, p86: 30, p91: 35 },
+        { minPCA: 512000, p81: 22, p86: 26, p91: 32 },
+        { minPCA: 450000, p81: 19, p86: 21, p91: 27 },
+        { minPCA: 387500, p81: 17, p86: 19, p91: 24 },
+        { minPCA: 325000, p81: 15, p86: 16, p91: 22 },
+        { minPCA: 262500, p81: 11, p86: 15, p91: 19 },
+        { minPCA: 200000, p81: 9, p86: 12, p91: 17 },
+        { minPCA: 137500, p81: 7, p86: 8, p91: 13 }
+      ];
+      const bonosNuevo = [
+        { minPCA: 780000, p81: 39, p86: 39, p91: 39 },
+        { minPCA: 680000, p81: 37, p86: 37, p91: 37 },
+        { minPCA: 580000, p81: 33, p86: 33, p91: 33 },
+        { minPCA: 480000, p81: 28, p86: 28, p91: 28 },
+        { minPCA: 420000, p81: 26, p86: 26, p91: 26 },
+        { minPCA: 360000, p81: 24, p86: 24, p91: 24 },
+        { minPCA: 300000, p81: 21, p86: 21, p91: 21 },
+        { minPCA: 240000, p81: 19, p86: 19, p91: 19 },
+        { minPCA: 180000, p81: 14, p86: 14, p91: 14 },
+        { minPCA: 120000, p81: 10, p86: 10, p91: 10 }
+      ];
+
+      let arregloBonos;
+      const t = (tipoAgente || "").trim().toLowerCase();
+      if (t === "consolidado") {
+        arregloBonos = bonosConsolidado;
+      } else if (t === "crecimiento") {
+        arregloBonos = bonosCrecimiento;
+      } else if (t === "nuevo") {
+        arregloBonos = bonosNuevo;
+      } else {
+        bonusSection.style.display = "block";
+        bonusInfoDiv.innerHTML = "<p>No existe una tabla de bonos Directo para este tipo de agente.</p>";
+        return;
+      }
+
+      let filaSeleccionada = null;
+      for (let i = 0; i < arregloBonos.length; i++) {
+        if (pcaCalculada >= arregloBonos[i].minPCA) {
+          filaSeleccionada = arregloBonos[i];
+          break;
+        }
+      }
+
+      if (!filaSeleccionada) {
+        bonusSection.style.display = "block";
+        bonusInfoDiv.innerHTML = `
+          <p>La PCA Calculada <strong>no alcanza la banda mínima</strong> para este tipo de agente.</p>
+          <p><strong>Porcentaje Directo:</strong> 0%</p>
+          <p><strong>Bono Directo Calculado:</strong> ${formatCurrency(0)}</p>
+        `;
+        return;
+      }
+
+      let porcentajeBono = 0;
+      if (persistencia >= 91) {
+        porcentajeBono = filaSeleccionada.p91;
+      } else if (persistencia >= 86) {
+        porcentajeBono = filaSeleccionada.p86;
+      } else if (persistencia >= 81) {
+        porcentajeBono = filaSeleccionada.p81;
+      } else {
+        porcentajeBono = 0;
+      }
+
+      const bonoCalculado = (pcaCalculada * porcentajeBono) / 100;
+
+      bonusSection.style.display = "block";
+      bonusInfoDiv.innerHTML = `
+        <p><strong>PCA Estimada:</strong> ${formatCurrency(pcaCalculada)}</p>
+        <p><strong>Persistencia Estimada:</strong> ${persistencia.toFixed(2)} %</p>
+        <p><strong>Banda Estimada:</strong> Desde ${formatCurrency(filaSeleccionada.minPCA)}</p>
+        <p><strong>Porcentaje Bono Estimado:</strong> ${porcentajeBono} %</p>
+        <p><strong>Bono Estimado:</strong> ${formatCurrency(bonoCalculado)}</p>
+      `;
+    }
+
+    // Nuevo formateador de porcentaje
+    function formatPercent(value) {
+      return value.toFixed(2) + "%";
+    }
+
+    // FunciÓn para formatear un string a $X,XXX.XX
+    function formatCurrencyNumberOnly(valueString) {
+      let numericValue = valueString.replace(/[^\d.]/g, "");
+      if(!numericValue) numericValue = "0";
+      const num = parseFloat(numericValue) || 0;
+      return formatCurrency(num);
+    }
+
+    // Limpia "$1,234.56" -> "1234.56"
+    function cleanCurrency(str) {
+      return str.replace(/[^0-9.-]/g, ""); 
+    }
+
+    // Formato final de moneda
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
+    }
+  </script>
+</body>
+</html>
