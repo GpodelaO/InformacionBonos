@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -176,6 +176,11 @@
       margin-left: 15px;
     }
 
+    /* Ocultamos la sección de persistencia para el usuario final */
+    #persistenciaSection {
+      display: none;
+    }
+
     /* ======= SECCION EXTRA: BANDAS y BONO DIRECTO ======= */
     .banda-bonus-section {
       width: 100%;
@@ -292,7 +297,7 @@
 
       <!-- TARJETA DE INPUTS Y VALORES CALCULADOS -->
       <div class="calculation-section card" id="calculos" style="display: none;">
-        <h2 class="card-title">Calculadora Bono</h2>
+        <h2 class="card-title">Calculadora Bono ($)</h2>
 
         <div>
           <label for="arrastreInput">Arrastre:</label>
@@ -306,7 +311,9 @@
           <label for="pcaCalculada">PCA Calculada:</label>
           <span id="pcaCalculada">$0.00</span>
         </div>
-        <div>
+
+        <!-- Sección de persistencia oculta -->
+        <div id="persistenciaSection">
           <label for="persistenciaInput">Persistencia (%):</label>
           <input type="number" id="persistenciaInput" value="0" />
         </div>
@@ -316,13 +323,13 @@
     <!-- APARTADO SEPARADO: BANDAS Y BONO DIRECTO -->
     <div class="banda-bonus-section" id="bandaBonusSection">
       <div class="banda-bonus-container">
-        <h2 class="card-title" style="margin-top: 0;">Bandas Estimadas</h2>
+        <h3 class="card-title" style="margin-top: 0;">Informacion Estimada de Bono</h3>
 
         <div class="diferencia">
           <ul id="bandasDiferencia"></ul>
         </div>
         <div id="bonusDirectoSection" class="bonus-directo-section">
-          <h3>Informacion Estimada de Bono</h3>
+          <h3>Con Este Cálculo Voy a Ganar</h3>
           <div id="bonusDirectoInfo"></div>
         </div>
       </div>
@@ -402,7 +409,7 @@
       const adelanto = parseFloat(row["Adelanto"] || 0);
       const bononeto = parseFloat(row["Bono Neto"] || 0);
 
-      // NUEVO DATO => "Bono Persistencia" => Se asume que es un número normal (ej "15" => 15%)
+      // NUEVO DATO => "Bono Persistencia"
       const bonoPersistencia = parseFloat(row["Bono Persistencia"] || 0);
 
       userDataDiv.style.display = "block";
@@ -418,13 +425,11 @@
         { label: "Nombre", value: row["Nombre"] || "" },
         { label: "Tipo de Agente", value: row["Tipo de Agente"] || "" },
         { label: "PCA", value: formatCurrency(pca) },
-        { label: "Persistencia (%)", value: persistencia.toFixed(2) },
-        { label: "Porcentaje De Bono (%)", value: porcentaje.toFixed(2) },
+        { label: "Persistencia (%)", value: persistencia.toFixed(2)+"%"},
+        { label: "Porcentaje De Bono (%)", value: porcentaje.toFixed(2)+"%"},
         { label: "Bono", value: formatCurrency(bono) },
         { label: "Adelanto", value: formatCurrency(adelanto) },
         { label: "Bono Neto", value: formatCurrency(bononeto) },
-
-        // AQUÍ el campo nuevo: "Bono Persistencia" en formato %
         { label: "Bono Persistencia", value: formatPercent(bonoPersistencia) }
       ];
 
@@ -434,6 +439,7 @@
         userDataDiv.appendChild(div);
       });
 
+      // Llenamos el valor de persistenciaInput para el cálculo (aunque esté oculto)
       persistenciaInput.value = persistencia.toFixed(2);
 
       document.getElementById("calculos").style.display = "block";
@@ -474,10 +480,20 @@
         return;
       }
 
-      const bandaMaxima = bandas[0];
+      // =============== CAMBIO AQUÍ: en vez de bandaMáxima, mostramos la banda actual ===============
+
+      // Hallamos cuál es la banda en la que “juega” la PCACalculada
+      let bandaActual = 0;
+      for (let i = 0; i < bandas.length; i++) {
+        if (pcaCalculada >= bandas[i]) {
+          bandaActual = bandas[i];
+          break;
+        }
+      }
+
+      // Calculamos la banda más cercana (la misma lógica que ya tenías)
       let bandaMasCercana = null;
       let diferenciaMinima = Infinity;
-
       for (let i = 0; i < bandas.length; i++) {
         const banda = bandas[i];
         const diff = banda - pcaCalculada;
@@ -487,22 +503,25 @@
         }
       }
 
-      let html = `<li><strong>Banda Máxima:</strong> ${formatCurrency(bandaMaxima)}</li>`;
+      // Mostramos la banda actual en lugar de la máxima
+      let html = `<li><strong>Banda Actual:</strong> ${formatCurrency(bandaActual)}</li>`;
+
       if (bandaMasCercana) {
         html += `
           <li>
-            <strong>Banda Más Cercana:</strong> ${formatCurrency(bandaMasCercana)}
-            <br/>Te faltan: ${formatCurrency(diferenciaMinima)}
+            <strong>Próxima Banda:</strong> ${formatCurrency(bandaMasCercana)}
+            <br/>Producción Faltante Para la Siguiente Banda: ${formatCurrency(diferenciaMinima)}
           </li>
         `;
       } else {
         html += `
           <li>
-            <strong>Banda Más Cercana:</strong>
-            ¡Felicidades! Has superado la banda más alta.
+            <strong>¡Felicidades!</strong>
+            Has superado la banda más alta.
           </li>
         `;
       }
+
       bandasDiferenciaUl.innerHTML = html;
 
       bandaBonusSection.style.display = "block";
