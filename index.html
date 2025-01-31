@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 
   <style>
+    /* Tu CSS se mantiene igual */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -265,7 +266,6 @@
 
   <!-- MAIN CONTAINER -->
   <div class="container">
-
     <!-- APARTADO PARA BUSCAR USUARIO -->
     <div class="input-group-container">
       <div class="input-group">
@@ -279,7 +279,7 @@
       <!-- TARJETA DATOS DE USUARIO -->
       <div id="userData" class="user-data card" style="display: none;"></div>
 
-      <!-- TARJETA DE INPUTS Y VALORES QUE VA CALCULAR LA CALCU -->
+      <!-- TARJETA DE INPUTS Y VALORES -->
       <div class="calculation-section card" id="calculos" style="display: none;">
         <h2 class="card-title">Calculadora De Bono Estimado ($)</h2>
 
@@ -296,7 +296,6 @@
           <span id="pcaCalculada">$0.00</span>
         </div>
 
-        <!-- Campos mostrados en la calculadora -->
         <div class="calc-result">
           <label>Banda Estimada:</label>
           <span id="bandaEstimada">--</span>
@@ -310,8 +309,7 @@
           <span id="bonoEstimado">--</span>
         </div>
 
-        <!-- Sección de persistencia oculta (solo para almacenar) -->
-        <div id="persistenciaSection">
+        <div id="persistenciaSection" style="display:none;">
           <label for="persistenciaInput">Persistencia (%):</label>
           <input type="number" id="persistenciaInput" value="0" />
         </div>
@@ -332,18 +330,16 @@
     </div>
   </div>
 
-    <!-- Ocultamos este div; ya no se usa -->
-    <div class="result" id="resultadoPersistencia" style="display:none;"></div>
-  </div>
-
+  <!-- DIV de persistencia manual (oculto) -->
+  <div class="result" id="resultadoPersistencia" style="display:none;"></div>
 
   <script>
-    // URL CSV Google Sheets
+    // URL CSV
     const googleSheetCSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhZ5SjhMC3cn4xemgNL4j7zsdD2hWWkdhrrwFXrFo6F26kN9GRzh7BfF9f5iRLrqZfTM02GDJ7t1or/pub?output=csv";
 
     let rows = [];
 
-    // Tablas de bandas
+    // Tablas
     const tablaConsolidado = [825000, 725000, 625000, 525000, 462500, 400000, 337500, 275000, 212500, 150000];
     const tablaCrecimiento = [775000, 687000, 612000, 512000, 450000, 387500, 325000, 262500, 200000, 137500];
     const tablaNuevo = [780000, 680000, 580000, 480000, 420000, 360000, 300000, 240000, 180000, 120000];
@@ -357,12 +353,11 @@
     const persistenciaInput = document.getElementById("persistenciaInput");
     const pcaCalculadaDiv = document.getElementById("pcaCalculada");
 
-    // Spans de resultados en la Calculadora
+    // Resultados
     const bandaEstimadaSpan = document.getElementById("bandaEstimada");
     const porcentajeBonoEstimadoSpan = document.getElementById("porcentajeBonoEstimado");
     const bonoEstimadoSpan = document.getElementById("bonoEstimado");
 
-    // Sección “Siguiente Banda”
     const bandasDiferenciaUl = document.getElementById("bandasDiferencia");
     const bandaBonusSection = document.getElementById("bandaBonusSection");
     const bonusDirectoInfoDiv = document.getElementById("bonusDirectoInfo");
@@ -380,7 +375,7 @@
         }
       });
 
-      // Formateo visual de Arrastre y Venta Nueva
+      // Formateo visual
       arrastreInput.addEventListener("blur", () => {
         arrastreInput.value = formatCurrencyNumberOnly(arrastreInput.value);
       });
@@ -427,8 +422,8 @@
         { label: "Nombre", value: row["Nombre"] || "" },
         { label: "Tipo de Agente", value: row["Tipo de Agente"] || "" },
         { label: "PCA", value: formatCurrency(pca) },
-        { label: "Persistencia (%)", value: persistencia.toFixed(2)+"%" },
-        { label: "Porcentaje De Bono (%)", value: porcentaje.toFixed(2)+"%" },
+        { label: "Persistencia (%)", value: persistencia.toFixed(2) + "%" },
+        { label: "Porcentaje De Bono (%)", value: porcentaje.toFixed(2) + "%" },
         { label: "Bono", value: formatCurrency(bono) },
         { label: "Adelanto", value: formatCurrency(adelanto) },
         { label: "Bono Neto", value: formatCurrency(bononeto) },
@@ -441,13 +436,13 @@
         userDataDiv.appendChild(div);
       });
 
-      // Guardamos persistencia en el input oculto par que no vea el agente
+      // Guardamos persistencia en un input oculto
       persistenciaInput.value = persistencia.toFixed(2);
 
       document.getElementById("calculos").style.display = "block";
       bandaBonusSection.style.display = "none";
 
-      // Cada vez que cambie arrastre o venta nueva recalculamos:
+      // Cada vez que cambie arrastre o venta nueva, recalculamos:
       [arrastreInput, ventaNuevaInput].forEach((input) => {
         input.addEventListener("input", () => {
           calcularPCA(pca, row["Tipo de Agente"]);
@@ -503,7 +498,7 @@
             <strong>Próxima Banda:</strong> ${formatCurrency(bandaMasCercana)}
           </li>
         `;
-        // Cálculo del bono en la siguiente banda -CUADERNOS AG-
+        // Cálculo del bono en la siguiente banda
         const bonosConsolidado = [
           { minPCA: 825000, p81: 34, p86: 37, p91: 42 },
           { minPCA: 725000, p81: 30, p86: 34, p91: 39 },
@@ -571,7 +566,6 @@
           </li>
         `;
 
-        // Diferencia con el Bono Estimado actual | resta 
         const bonoEstimadoActual = parseFloat(cleanCurrency(bonoEstimadoSpan.textContent)) || 0;
         let diferencia = bonoSiguienteBanda - bonoEstimadoActual;
         html += `
@@ -580,7 +574,6 @@
           </li>
         `;
       } else {
-        // Si supera la banda más alta | que se quite todo
         html += `
           <li>
             <strong>Banda Más Cercana:</strong>
@@ -592,11 +585,11 @@
       bandasDiferenciaUl.innerHTML = html;
       bandaBonusSection.style.display = "block";
 
-      // Calcula el bono principal
+      // Calculamos bono principal
       calcularBonoDirecto(pcaCalculada, tipoAgente);
 
-      // Aquí calculamos el bono de persistencia automáticamente: | de nuevo
-      calcularBonoPersistenciaAuto(pcaCalculada, persistencia);
+      // <-- NUEVO: Llamamos a la función y le pasamos también el tipo de agente
+      calcularBonoPersistenciaAuto(pcaCalculada, persistencia, tipo);
     }
 
     function calcularBonoDirecto(pcaCalculada, tipoAgente) {
@@ -699,9 +692,19 @@
       bonusInfoDiv.innerHTML = ""; 
     }
 
-    // Función automática para Bono de Persistencia para que se rellena 
-    function calcularBonoPersistenciaAuto(pca, persistencia) {
-      // Tabla “Bono de Persistencia”- calculo bono persis |solo consolidado|
+    // <-- NUEVO: Recibe también el tipo, y sólo muestra la persistencia si es 'consolidado'
+    function calcularBonoPersistenciaAuto(pca, persistencia, tipoAgente) {
+      if (tipoAgente !== "consolidado") {
+        // Si NO es consolidado, muestra “No aplica” o no lo muestra:
+        bandasDiferenciaUl.innerHTML += `
+          <li>
+            <strong>Porcentaje Bono Persistencia:</strong> No aplica (solo para Agentes Consolidados)
+          </li>
+        `;
+        return;
+      }
+
+      // De aquí en adelante, es la lógica de persistencia
       let banda = null; 
       if (pca >= 825000) {
         banda = [14, 17, 19];
@@ -735,29 +738,28 @@
       } else if (persistencia >= 81) {
         indice = 0;
       } else {
-        // El agente un mensaje en la lista si no llega al 81%:
         bandasDiferenciaUl.innerHTML += `
           <li>
             <strong>No alcanzas el mínimo (81%) de persistencia.</strong> Bono = 0%
           </li>
-        `;  // <-- cambio para qajuste
+        `;
         return;
       }
 
       const bono = banda[indice];
-      // Agregamos el porcentaje en el mismo ul:
       bandasDiferenciaUl.innerHTML += `
         <li>
           <strong>Porcentaje Bono Persistencia:</strong> ${bono}%
         </li>
-      `;  // <-- cambio para nombre
+      `;
     }
 
-    // (Si quieres conservar la forma manual)
+    // Forma manual (opcional)
     function calcularBonoPersistencia() {
       const pca = parseFloat(document.getElementById("pcaPersistencia").value) || 0;
       const persistencia = parseFloat(document.getElementById("persistenciaPorcent").value) || 0;
-      calcularBonoPersistenciaAuto(pca, persistencia);
+      // Este llama a la función igual, pero asume tipo 'consolidado':
+      calcularBonoPersistenciaAuto(pca, persistencia, "consolidado");
     }
 
     function formatPercent(value) {
