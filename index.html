@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calculadora de Bonos</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 
@@ -210,24 +209,19 @@
     }
   </style>
 </head>
-
 <body>
-  <!-- LOGO -->
   <div class="logo-container">
     <img src="LOGO.png" alt="Logo" />
   </div>
-  <!-- TITULO -->
   <h1>Información De Bonos</h1>
 
-  <!-- AVISO -->
   <div class="aviso">
     La información presentada corresponde a datos consolidados al cierre del mes anterior. <br />
     Los montos mostrados son aproximados y tienen como propósito ofrecer una referencia sobre tu progreso trimestral.
   </div>
 
-  <!-- MAIN CONTAINER -->
   <div class="container">
-    <!-- APARTADO PARA BUSCAR USUARIO -->
+    <!-- BUSCAR USUARIO -->
     <div class="input-group-container">
       <div class="input-group">
         <label for="usuarioInput">Introducir Contraseña:</label>
@@ -237,10 +231,10 @@
     </div>
 
     <div class="data-container">
-      <!-- TARJETA DATOS DE USUARIO -->
+      <!-- DATOS DE USUARIO -->
       <div id="userData" class="user-data card" style="display: none;"></div>
 
-      <!-- TARJETA DE INPUTS Y VALORES -->
+      <!-- CALCULADORA -->
       <div class="calculation-section card" id="calculos" style="display: none;">
         <h2 class="card-title">Calculadora De Bono Estimado ($)</h2>
 
@@ -253,7 +247,7 @@
           <input type="text" id="ventaNuevaInput" value="0" />
         </div>
         <div>
-          <label for="pcaCalculada">PCA Calculada:</label>
+          <label>PCA Calculada:</label>
           <span id="pcaCalculada">$0.00</span>
         </div>
 
@@ -270,12 +264,12 @@
           <span id="bonoEstimado">--</span>
         </div>
 
-        <!-- Input hidden para persistencia, que se usa internamente en cálculos -->
+        <!-- Input hidden para persistencia (no editable por usuario) -->
         <input type="hidden" id="persistenciaInput" value="0" />
       </div>
     </div>
 
-    <!-- SECCIÓN PARA MOSTRAR LA BANDA SIGUIENTE -->
+    <!-- RESULTADOS BANDA SIGUIENTE -->
     <div class="banda-bonus-section" id="bandaBonusSection">
       <div class="banda-bonus-container">
         <h3 class="card-title" style="margin-top: 0;">Información Estimada para Alcanzar la Siguiente Banda de Bono</h3>
@@ -288,21 +282,31 @@
   </div>
 
   <script>
-    // ========== URL del CSV en Google Sheets ==========
+    // URL Google Sheets
     const googleSheetCSV_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhZ5SjhMC3cn4xemgNL4j7zsdD2hWWkdhrrwFXrFo6F26kN9GRzh7BfF9f5iRLrqZfTM02GDJ7t1or/pub?output=csv";
 
-    // ========== Arrays de BANDAS 2024 ==========
+    /********************************************************
+     * TABLAS DE BANDA (PCA) 2024 y 2025
+     ********************************************************/
+    // Consolidado 2024
     const tablaConsolidado2024 = [825000, 725000, 625000, 525000, 462500, 400000, 337500, 275000, 212500, 150000];
+    // Crecimiento 2024
     const tablaCrecimiento2024 = [775000, 687000, 612000, 512000, 450000, 387500, 325000, 262500, 200000, 137500];
+    // Nuevo 2024
     const tablaNuevo2024       = [780000, 680000, 580000, 480000, 420000, 360000, 300000, 240000, 180000, 120000];
 
-    // ========== Arrays de BANDAS 2025 (ejemplo) ==========
+    // Consolidado 2025
     const tablaConsolidado2025 = [870000, 760000, 660000, 550000, 485000, 420000, 355000, 290000, 225000, 160000];
+    // Crecimiento 2025
     const tablaCrecimiento2025 = [800000, 725000, 645000, 540000, 475000, 410000, 345000, 275000, 210000, 150000];
+    // Nuevo 2025
     const tablaNuevo2025       = [750000, 625000, 500000, 437500, 375000, 312500, 250000, 187500, 125000];
 
-    // ========== Arrays de BONOS 2024 (p81, p86, p91) ==========
+    /********************************************************
+     * TABLAS DE BONO DIRECTO (p81, p86, p91, etc.)
+     ********************************************************/
+    // ========== BONOS CONSOLIDADO 2024 ==========
     const bonosConsolidado2024 = [
       { minPCA: 825000, p81: 34, p86: 37, p91: 42 },
       { minPCA: 725000, p81: 30, p86: 34, p91: 39 },
@@ -315,18 +319,23 @@
       { minPCA: 212500, p81: 5,  p86: 11, p91: 15 },
       { minPCA: 150000, p81: 2,  p86: 9,  p91: 11 }
     ];
+
+    // ========== BONOS CRECIMIENTO 2024 (extracto de la segunda imagen) ==========
+    // Tabla que inicia en 137,500 (parte inferior):
     const bonosCrecimiento2024 = [
-      { minPCA: 775000, p81: 36, p86: 39, p91: 44 },
-      { minPCA: 687000, p81: 31, p86: 35, p91: 40 },
-      { minPCA: 612000, p81: 26, p86: 30, p91: 35 },
-      { minPCA: 512000, p81: 22, p86: 26, p91: 32 },
-      { minPCA: 450000, p81: 19, p86: 21, p91: 27 },
-      { minPCA: 387500, p81: 17, p86: 19, p91: 24 },
-      { minPCA: 325000, p81: 15, p86: 16, p91: 22 },
-      { minPCA: 262500, p81: 11, p86: 15, p91: 19 },
-      { minPCA: 200000, p81: 9,  p86: 12, p91: 17 },
-      { minPCA: 137500, p81: 7,  p86: 8,  p91: 13 }
+      { minPCA: 775000, p85: 14, p88: 17, p91: 19 },
+      { minPCA: 687000, p85: 13, p88: 15, p91: 17 },
+      { minPCA: 612000, p85: 11, p88: 13, p91: 15 },
+      { minPCA: 512000, p85: 10, p88: 12, p91: 14 },
+      { minPCA: 450000, p85: 7,  p88: 8,  p91: 10 },
+      { minPCA: 387500, p85: 6,  p88: 7,  p91: 8 },
+      { minPCA: 325000, p85: 4,  p88: 5,  p91: 7 },
+      { minPCA: 262500, p85: 3,  p88: 4,  p91: 6 },
+      { minPCA: 200000, p85: 2,  p88: 3,  p91: 4 },
+      { minPCA: 137500, p85: 1,  p88: 2,  p91: 3 }
     ];
+
+    // ========== BONOS NUEVO 2024 ==========
     const bonosNuevo2024 = [
       { minPCA: 780000, p81: 39, p86: 39, p91: 39 },
       { minPCA: 680000, p81: 37, p86: 37, p91: 37 },
@@ -340,7 +349,7 @@
       { minPCA: 120000, p81: 10, p86: 10, p91: 10 }
     ];
 
-    // ========== Arrays de BONOS 2025 (ejemplo) ==========
+    // ========== BONOS CONSOLIDADO 2025 ==========
     const bonosConsolidado2025 = [
       { minPCA: 870000, p81: 34, p86: 37, p91: 42 },
       { minPCA: 760000, p81: 30, p86: 34, p91: 39 },
@@ -353,18 +362,23 @@
       { minPCA: 225000, p81: 5,  p86: 11, p91: 15 },
       { minPCA: 160000, p81: 2,  p86: 9,  p91: 11 }
     ];
+
+    // ========== BONOS CRECIMIENTO 2025 (extracto de la primera imagen) ==========
+    // Tabla que inicia en 150,000 (parte inferior):
     const bonosCrecimiento2025 = [
-      { minPCA: 800000, p85: 34, p88: 37, p91: 42 },
-      { minPCA: 725000, p85: 31, p88: 35, p91: 40 },
-      { minPCA: 645000, p85: 26, p88: 30, p91: 35 },
-      { minPCA: 540000, p85: 22, p88: 26, p91: 32 },
-      { minPCA: 475000, p85: 19, p88: 21, p91: 27 },
-      { minPCA: 410000, p85: 17, p88: 19, p91: 24 },
-      { minPCA: 345000, p85: 15, p88: 17, p91: 22 },
-      { minPCA: 275000, p85: 11, p88: 15, p91: 19 },
-      { minPCA: 210000, p85: 9,  p88: 12, p91: 17 },
-      { minPCA: 150000, p85: 7,  p88: 8,  p91: 13 }
+      { minPCA: 800000, p85: 16, p88: 20, p91: 21 },
+      { minPCA: 725000, p85: 13, p88: 15, p91: 17 },
+      { minPCA: 645000, p85: 11, p88: 13, p91: 15 },
+      { minPCA: 540000, p85: 10, p88: 12, p91: 14 },
+      { minPCA: 475000, p85: 7,  p88: 8,  p91: 10 },
+      { minPCA: 410000, p85: 6,  p88: 7,  p91: 8 },
+      { minPCA: 345000, p85: 4,  p88: 5,  p91: 7 },
+      { minPCA: 275000, p85: 3,  p88: 4,  p91: 5 },
+      { minPCA: 210000, p85: 2,  p88: 3,  p91: 4 },
+      { minPCA: 150000, p85: 1,  p88: 2,  p91: 3 }
     ];
+
+    // ========== BONOS NUEVO 2025 ==========
     const bonosNuevo2025 = [
       { minPCA: 750000, p81: 36, p86: 36, p91: 36 },
       { minPCA: 625000, p81: 32, p86: 32, p91: 32 },
@@ -377,16 +391,16 @@
       { minPCA: 125000, p81: 10, p86: 10, p91: 10 }
     ];
 
-    // ========== Variables globales ==========
+    // Variables globales
     let rows = [];
 
-    const buscarUsuarioBtn    = document.getElementById("buscarUsuario");
-    const usuarioInput        = document.getElementById("usuarioInput");
-    const userDataDiv         = document.getElementById("userData");
-    const arrastreInput       = document.getElementById("arrastreInput");
-    const ventaNuevaInput     = document.getElementById("ventaNuevaInput");
-    const persistenciaInput   = document.getElementById("persistenciaInput"); // hidden
-    const pcaCalculadaDiv     = document.getElementById("pcaCalculada");
+    const buscarUsuarioBtn  = document.getElementById("buscarUsuario");
+    const usuarioInput      = document.getElementById("usuarioInput");
+    const userDataDiv       = document.getElementById("userData");
+    const arrastreInput     = document.getElementById("arrastreInput");
+    const ventaNuevaInput   = document.getElementById("ventaNuevaInput");
+    const persistenciaInput = document.getElementById("persistenciaInput");
+    const pcaCalculadaDiv   = document.getElementById("pcaCalculada");
 
     const bandaEstimadaSpan          = document.getElementById("bandaEstimada");
     const porcentajeBonoEstimadoSpan = document.getElementById("porcentajeBonoEstimado");
@@ -396,8 +410,8 @@
     const bandaBonusSection   = document.getElementById("bandaBonusSection");
     const bonusDirectoInfoDiv = document.getElementById("bonusDirectoInfo");
 
-    // Al cargar, leemos la hoja
     document.addEventListener("DOMContentLoaded", () => {
+      // Cargamos el CSV
       Papa.parse(googleSheetCSV_URL, {
         download: true,
         header: true,
@@ -410,7 +424,7 @@
         }
       });
 
-      // Pequeño formateo en blur
+      // Formateo en blur
       arrastreInput.addEventListener("blur", () => {
         arrastreInput.value = formatCurrencyNumberOnly(arrastreInput.value);
       });
@@ -430,7 +444,7 @@
         return;
       }
 
-      // Buscamos la fila cuyo 'Usuario' coincida
+      // Buscar la fila en CSV
       const row = rows.find(r => r["Usuario"] == usuario);
       if (!row) {
         alert("Usuario no encontrado.");
@@ -440,33 +454,31 @@
     });
 
     function mostrarUsuario(row) {
-      // Obtenemos valores numéricos
-      const pca           = parseFloat(row["PCA"] || 0);
-      const persistencia  = parseFloat(row["Persistencia"] || 0);
-      const porcentaje    = parseFloat(row["Porcentaje De Bono (%)"] || 0);
-      const bono          = parseFloat(row["Bono"] || 0);
-      const adelanto      = parseFloat(row["Adelanto"] || 0);
-      const bononeto      = parseFloat(row["Bono Neto"] || 0);
-      const bonoPersist   = parseFloat(row["Bono Persistencia"] || 0);
-      // const cuaderno      = row["Cuaderno"] || "2024"; // Lo usamos internamente
+      const pca          = parseFloat(row["PCA"] || 0);
+      const persistencia = parseFloat(row["Persistencia"] || 0);
+      const porcentaje   = parseFloat(row["Porcentaje De Bono (%)"] || 0);
+      const bono         = parseFloat(row["Bono"] || 0);
+      const adelanto     = parseFloat(row["Adelanto"] || 0);
+      const bononeto     = parseFloat(row["Bono Neto"] || 0);
+      const bonoPersist  = parseFloat(row["Bono Persistencia"] || 0);
 
+      // Mostramos tarjeta
       userDataDiv.style.display = "block";
       userDataDiv.innerHTML = `
         <h2 class="card-title">Información Trimestral de Agente</h2>
       `;
 
-      // Mostramos la persistencia (%) en la tarjeta,
-      // PERO NO mostrarmos "Usuario" ni "Cuaderno"
+      // Mostramos persistencia, etc. (pero no usuario/cuaderno)
       const fields = [
-        { label: "Nombre",             value: row["Nombre"] || "" },
-        { label: "Tipo de Agente",     value: row["Tipo de Agente"] || "" },
-        { label: "PCA",                value: formatCurrency(pca) },
-        { label: "Persistencia (%)",   value: persistencia.toFixed(2) + "%" },
-        { label: "Porcentaje De Bono", value: porcentaje.toFixed(2) + "%" },
-        { label: "Bono",               value: formatCurrency(bono) },
-        { label: "Adelanto",           value: formatCurrency(adelanto) },
-        { label: "Bono Neto",          value: formatCurrency(bononeto) },
-        { label: "Bono Persistencia",  value: formatPercent(bonoPersist) }
+        { label: "Nombre",              value: row["Nombre"] || "" },
+        { label: "Tipo de Agente",      value: row["Tipo de Agente"] || "" },
+        { label: "PCA",                 value: formatCurrency(pca) },
+        { label: "Persistencia (%)",    value: persistencia.toFixed(2) + "%" },
+        { label: "Porcentaje De Bono",  value: porcentaje.toFixed(2) + "%" },
+        { label: "Bono",                value: formatCurrency(bono) },
+        { label: "Adelanto",            value: formatCurrency(adelanto) },
+        { label: "Bono Neto",           value: formatCurrency(bononeto) },
+        { label: "Bono Persistencia",   value: formatPercent(bonoPersist) }
       ];
 
       fields.forEach(field => {
@@ -475,18 +487,18 @@
         userDataDiv.appendChild(div);
       });
 
-      // Guardamos la persistencia en el input oculto
+      // Guardamos persistencia en el input hidden (para cálculo)
       persistenciaInput.value = persistencia.toFixed(2);
 
-      // Mostramos la sección de cálculos
+      // Mostramos panel de cálculo
       document.getElementById("calculos").style.display = "block";
       bandaBonusSection.style.display = "none";
 
-      // Determinamos el tipo de agente y cuaderno (usado para elegir tablas):
-      const tipoAgente  = (row["Tipo de Agente"] || "").toLowerCase();
-      const anioCuaderno = row["Cuaderno"] || "2024"; // por defecto, 2024
+      // Determinamos cuaderno y tipo
+      const anioCuaderno = row["Cuaderno"] || "2024"; 
+      const tipoAgente   = (row["Tipo de Agente"] || "").toLowerCase();
 
-      // Escuchamos cambios en arrastre/ventaNueva
+      // Cada vez que cambie arrastre o venta nueva, recalcular
       [arrastreInput, ventaNuevaInput].forEach(input => {
         input.addEventListener("input", () => {
           calcularPCA(pca, tipoAgente, anioCuaderno);
@@ -500,12 +512,12 @@
     function calcularPCA(pcaBase, tipoAgente, anioCuaderno) {
       const arrastre     = parseFloat(cleanCurrency(arrastreInput.value)) || 0;
       const ventaNueva   = parseFloat(cleanCurrency(ventaNuevaInput.value)) || 0;
-      const persistencia = parseFloat(persistenciaInput.value || 0);
+      const persistencia = parseFloat(persistenciaInput.value) || 0;
 
       const pcaCalculada = pcaBase + arrastre + ventaNueva;
       pcaCalculadaDiv.textContent = formatCurrency(pcaCalculada);
 
-      // Seleccionamos las bandas según cuaderno y tipo
+      // Seleccionar la tabla de bandas
       let bandas = [];
       if (anioCuaderno === "2024") {
         if (tipoAgente === "consolidado") bandas = tablaConsolidado2024;
@@ -517,14 +529,15 @@
         else if (tipoAgente === "nuevo") bandas = tablaNuevo2025;
       }
 
+      // Si no hay bandas o es "nuevo" y no queremos bandas, etc.
       if (!bandas || bandas.length === 0) {
         bandasDiferenciaUl.innerHTML = "<li>No hay bandas disponibles</li>";
         bandaBonusSection.style.display = "block";
         return;
       }
 
-      // Calculamos la siguiente banda
-      let bandaMasCercana = null;
+      // Buscamos siguiente banda
+      let bandaMasCercana  = null;
       let diferenciaMinima = Infinity;
       for (let banda of bandas) {
         const diff = banda - pcaCalculada;
@@ -538,50 +551,69 @@
       if (bandaMasCercana) {
         html += `
           <li>
-            <strong>Producción Faltante Para la Siguiente Banda:</strong>
+            <strong>Producción Faltante Para la Siguiente Banda:</strong> 
             ${formatCurrency(diferenciaMinima)}
             <br/>
-            <strong>Próxima Banda:</strong>
+            <strong>Próxima Banda:</strong> 
             ${formatCurrency(bandaMasCercana)}
           </li>
         `;
-        // Array de bonos
+        // Tomamos el arreglo de bonosDirectos
         let arrayBonos = [];
         if (anioCuaderno === "2024") {
-          if (tipoAgente === "consolidado") arrayBonos = bonosConsolidado2024;
+          if (tipoAgente === "consolidado")   arrayBonos = bonosConsolidado2024;
           else if (tipoAgente === "crecimiento") arrayBonos = bonosCrecimiento2024;
-          else if (tipoAgente === "nuevo") arrayBonos = bonosNuevo2024;
+          else if (tipoAgente === "nuevo")    arrayBonos = bonosNuevo2024;
         } else {
-          if (tipoAgente === "consolidado") arrayBonos = bonosConsolidado2025;
+          if (tipoAgente === "consolidado")   arrayBonos = bonosConsolidado2025;
           else if (tipoAgente === "crecimiento") arrayBonos = bonosCrecimiento2025;
-          else if (tipoAgente === "nuevo") arrayBonos = bonosNuevo2025;
+          else if (tipoAgente === "nuevo")    arrayBonos = bonosNuevo2025;
         }
 
+        // Buscamos la fila de la banda
         let filaBanda = arrayBonos.find(b => b.minPCA === bandaMasCercana);
         if (!filaBanda) filaBanda = arrayBonos[0];
 
-        // Persistencia -> % Siguiente Banda
+        // Determinamos persistencia -> porcentaje
         let porcentajeSiguienteBanda = 0;
-        if (persistencia >= 91) {
-          porcentajeSiguienteBanda = filaBanda.p91;
-        } else if (persistencia >= 86) {
-          porcentajeSiguienteBanda = filaBanda.p86;
-        } else if (persistencia >= 81) {
-          porcentajeSiguienteBanda = filaBanda.p81;
+        // OJO: En crecimiento 2024/2025 se usan p85, p88, p91. En consolidado/nuevo, p81, p86, p91
+        if (tipoAgente === "crecimiento") {
+          // Años 2024/2025
+          if (persistencia >= 91) {
+            porcentajeSiguienteBanda = filaBanda.p91;
+          } else if (persistencia >= 88) {
+            porcentajeSiguienteBanda = filaBanda.p88;
+          } else if (persistencia >= 85) {
+            porcentajeSiguienteBanda = filaBanda.p85;
+          } else {
+            porcentajeSiguienteBanda = 0;
+          }
+        } else {
+          // consolidado o nuevo (p81, p86, p91)
+          if (persistencia >= 91) {
+            porcentajeSiguienteBanda = filaBanda.p91;
+          } else if (persistencia >= 86) {
+            porcentajeSiguienteBanda = filaBanda.p86;
+          } else if (persistencia >= 81) {
+            porcentajeSiguienteBanda = filaBanda.p81;
+          } else {
+            porcentajeSiguienteBanda = 0;
+          }
         }
 
         const bonoSig = bandaMasCercana * (porcentajeSiguienteBanda / 100);
         html += `
           <li>
-            <strong>Bono Calculado en la Siguiente Banda:</strong>
+            <strong>Bono Calculado en la Siguiente Banda:</strong> 
             ${formatCurrency(bonoSig)}
           </li>
         `;
+        // Comparar contra el bonoEstimado actual
         const bonoEstimadoActual = parseFloat(cleanCurrency(bonoEstimadoSpan.textContent)) || 0;
         const adicional = bonoSig - bonoEstimadoActual;
         html += `
           <li>
-            <strong>Adicional Estarías Ganando:</strong>
+            <strong>Adicional Estarías Ganando:</strong> 
             ${formatCurrency(adicional)}
           </li>
         `;
@@ -593,13 +625,14 @@
           </li>
         `;
       }
+
       bandasDiferenciaUl.innerHTML = html;
       bandaBonusSection.style.display = "block";
 
       // Calculamos el bono principal
       calcularBonoDirecto(pcaCalculada, tipoAgente, anioCuaderno);
 
-      // Calculamos persistencia si es consolidado
+      // Calculamos persistencia
       calcularBonoPersistenciaAuto(pcaCalculada, persistencia, tipoAgente, anioCuaderno);
     }
 
@@ -607,7 +640,8 @@
       const persistencia = parseFloat(persistenciaInput.value) || 0;
       bonusDirectoInfoDiv.innerHTML = "";
 
-      if (!persistencia || persistencia < 0) {
+      // Manejo de error en persistencia
+      if (persistencia <= 0) {
         bandaEstimadaSpan.textContent          = "--";
         porcentajeBonoEstimadoSpan.textContent = "--";
         bonoEstimadoSpan.textContent           = "--";
@@ -617,18 +651,19 @@
         return;
       }
 
-      // Array de bonos
+      // Elegimos el array de bonos
       let arrayBonos = [];
       if (anioCuaderno === "2024") {
-        if (tipoAgente === "consolidado") arrayBonos = bonosConsolidado2024;
+        if (tipoAgente === "consolidado")   arrayBonos = bonosConsolidado2024;
         else if (tipoAgente === "crecimiento") arrayBonos = bonosCrecimiento2024;
-        else if (tipoAgente === "nuevo") arrayBonos = bonosNuevo2024;
+        else if (tipoAgente === "nuevo")    arrayBonos = bonosNuevo2024;
       } else {
-        if (tipoAgente === "consolidado") arrayBonos = bonosConsolidado2025;
+        if (tipoAgente === "consolidado")   arrayBonos = bonosConsolidado2025;
         else if (tipoAgente === "crecimiento") arrayBonos = bonosCrecimiento2025;
-        else if (tipoAgente === "nuevo") arrayBonos = bonosNuevo2025;
+        else if (tipoAgente === "nuevo")    arrayBonos = bonosNuevo2025;
       }
 
+      // Buscamos fila
       let filaSeleccionada = null;
       for (let item of arrayBonos) {
         if (pcaCalculada >= item.minPCA) {
@@ -641,7 +676,7 @@
         porcentajeBonoEstimadoSpan.textContent = "0%";
         bonoEstimadoSpan.textContent           = formatCurrency(0);
         bonusDirectoInfoDiv.innerHTML = `
-          <p>La PCA Calculada <strong>no alcanza la banda mínima</strong>.</p>
+          <p>La PCA Calculada <strong>no alcanza la banda mínima</strong> para este tipo de agente en ${anioCuaderno}.</p>
           <p><strong>Porcentaje Directo:</strong> 0%</p>
           <p><strong>Bono Directo Calculado:</strong> $0.00</p>
         `;
@@ -649,117 +684,220 @@
       }
 
       let porcentajeBono = 0;
-      if (persistencia >= 91) {
-        porcentajeBono = filaSeleccionada.p91;
-      } else if (persistencia >= 86) {
-        porcentajeBono = filaSeleccionada.p86;
-      } else if (persistencia >= 81) {
-        porcentajeBono = filaSeleccionada.p81;
+      // Si es "crecimiento", usar p85/p88/p91
+      if (tipoAgente === "crecimiento") {
+        if (persistencia >= 91) {
+          porcentajeBono = filaSeleccionada.p91;
+        } else if (persistencia >= 88) {
+          porcentajeBono = filaSeleccionada.p88;
+        } else if (persistencia >= 85) {
+          porcentajeBono = filaSeleccionada.p85;
+        } else {
+          porcentajeBono = 0;
+        }
+      } else {
+        // consolidado / nuevo => p81/p86/p91
+        if (persistencia >= 91) {
+          porcentajeBono = filaSeleccionada.p91;
+        } else if (persistencia >= 86) {
+          porcentajeBono = filaSeleccionada.p86;
+        } else if (persistencia >= 81) {
+          porcentajeBono = filaSeleccionada.p81;
+        } else {
+          porcentajeBono = 0;
+        }
       }
+
       const bonoCalculado = (pcaCalculada * porcentajeBono) / 100;
       bandaEstimadaSpan.textContent          = "Desde " + formatCurrency(filaSeleccionada.minPCA);
       porcentajeBonoEstimadoSpan.textContent = porcentajeBono + " %";
       bonoEstimadoSpan.textContent           = formatCurrency(bonoCalculado);
     }
 
+    /**
+     * Cálculo de Bono de Persistencia (Extra).
+     * - Si es consolidado, usamos la tabla original que tenías.
+     * - Si es crecimiento, usamos las nuevas tablas de persistencia. 
+     * - Si es nuevo, “No aplica”.
+     */
     function calcularBonoPersistenciaAuto(pca, persistencia, tipoAgente, anioCuaderno) {
-      if (tipoAgente !== "consolidado") {
+      // 1) Manejo caso "nuevo" => “No aplica”.
+      if (tipoAgente === "nuevo") {
         bandasDiferenciaUl.innerHTML += `
           <li>
-            <strong>Porcentaje Bono Persistencia:</strong>
-            No aplica (solo para Agentes Consolidados).
+            <strong>Bono Persistencia:</strong> 
+            No aplica (solo para Consolidado/Crecimiento).
           </li>
         `;
         return;
       }
 
-      // Lógica 2024 vs 2025, según tu preferencia
-      let bandaPersist = [0,0,0];
+      // 2) ¿Consolidado? => Usa la lógica original
+      if (tipoAgente === "consolidado") {
+        let bandaPersist = [0,0,0];
+        if (anioCuaderno === "2024") {
+          if (pca >= 825000) {
+            bandaPersist = [14, 17, 19];
+          } else if (pca >= 725000) {
+            bandaPersist = [10, 12, 14];
+          } else if (pca >= 625000) {
+            bandaPersist = [8, 10, 12];
+          } else if (pca >= 525000) {
+            bandaPersist = [7, 9, 10];
+          } else if (pca >= 462500) {
+            bandaPersist = [5, 6, 8];
+          } else if (pca >= 400000) {
+            bandaPersist = [3, 4, 6];
+          } else if (pca >= 337500) {
+            bandaPersist = [2, 3, 4];
+          } else if (pca >= 275000) {
+            bandaPersist = [1, 2, 3];
+          } else if (pca >= 212500) {
+            bandaPersist = [0, 1, 2];
+          } else if (pca >= 150000) {
+            bandaPersist = [0, 0, 1];
+          }
+        } else {
+          // Consolidado 2025 (la que ya tenías en tu código)
+          if (pca >= 870000) {
+            bandaPersist = [14, 17, 19];
+          } else if (pca >= 760000) {
+            bandaPersist = [10, 12, 14];
+          } else if (pca >= 660000) {
+            bandaPersist = [8, 10, 12];
+          } else if (pca >= 550000) {
+            bandaPersist = [7, 9, 10];
+          } else if (pca >= 485000) {
+            bandaPersist = [5, 6, 8];
+          } else if (pca >= 420000) {
+            bandaPersist = [3, 4, 6];
+          } else if (pca >= 355000) {
+            bandaPersist = [2, 3, 4];
+          } else if (pca >= 290000) {
+            bandaPersist = [1, 2, 3];
+          } else if (pca >= 225000) {
+            bandaPersist = [0, 1, 2];
+          } else if (pca >= 160000) {
+            bandaPersist = [0, 0, 1];
+          }
+        }
+
+        let indice = -1;
+        if (persistencia >= 91) {
+          indice = 2;
+        } else if (persistencia >= 86) {
+          indice = 1;
+        } else if (persistencia >= 81) {
+          indice = 0;
+        } else {
+          bandasDiferenciaUl.innerHTML += `
+            <li>
+              <strong>No alcanzas el mínimo (81%) de persistencia.</strong>
+              Bono Persistencia = 0%
+            </li>
+          `;
+          return;
+        }
+        const bonoExtra = bandaPersist[indice] || 0;
+        bandasDiferenciaUl.innerHTML += `
+          <li>
+            <strong>Bono Persistencia (Consolidado):</strong> 
+            ${bonoExtra}%
+          </li>
+        `;
+        return;
+      }
+
+      // 3) Caso "crecimiento" => Usamos las tablas de las imágenes
+      //    Ten en cuenta que en las imágenes la persistencia es >=85%, >=88%, >=91%.
+      let bandaPersistenciaCrec = [0,0,0];
+      // 2024 => la tabla con final 137,500
       if (anioCuaderno === "2024") {
-        if (pca >= 825000) {
-          bandaPersist = [14, 17, 19];
-        } else if (pca >= 725000) {
-          bandaPersist = [10, 12, 14];
-        } else if (pca >= 625000) {
-          bandaPersist = [8, 10, 12];
-        } else if (pca >= 525000) {
-          bandaPersist = [7, 9, 10];
-        } else if (pca >= 462500) {
-          bandaPersist = [5, 6, 8];
-        } else if (pca >= 400000) {
-          bandaPersist = [3, 4, 6];
-        } else if (pca >= 337500) {
-          bandaPersist = [2, 3, 4];
-        } else if (pca >= 275000) {
-          bandaPersist = [1, 2, 3];
-        } else if (pca >= 212500) {
-          bandaPersist = [0, 1, 2];
-        } else if (pca >= 150000) {
-          bandaPersist = [0, 0, 1];
+        if (pca >= 775000) {
+          bandaPersistenciaCrec = [14, 17, 19];
+        } else if (pca >= 687000) {
+          bandaPersistenciaCrec = [13, 15, 17];
+        } else if (pca >= 612000) {
+          bandaPersistenciaCrec = [11, 13, 15];
+        } else if (pca >= 512000) {
+          bandaPersistenciaCrec = [10, 12, 14];
+        } else if (pca >= 450000) {
+          bandaPersistenciaCrec = [7, 8, 10];
+        } else if (pca >= 387500) {
+          bandaPersistenciaCrec = [6, 7, 8];
+        } else if (pca >= 325000) {
+          bandaPersistenciaCrec = [4, 5, 7];
+        } else if (pca >= 262500) {
+          bandaPersistenciaCrec = [3, 4, 6];
+        } else if (pca >= 200000) {
+          bandaPersistenciaCrec = [2, 3, 4];
+        } else if (pca >= 137500) {
+          bandaPersistenciaCrec = [1, 2, 3];
         }
       } else {
-        // Ejemplo 2025
-        if (pca >= 870000) {
-          bandaPersist = [14, 17, 19];
-        } else if (pca >= 760000) {
-          bandaPersist = [10, 12, 14];
-        } else if (pca >= 660000) {
-          bandaPersist = [8, 10, 12];
-        } else if (pca >= 550000) {
-          bandaPersist = [7, 9, 10];
-        } else if (pca >= 485000) {
-          bandaPersist = [5, 6, 8];
-        } else if (pca >= 420000) {
-          bandaPersist = [3, 4, 6];
-        } else if (pca >= 355000) {
-          bandaPersist = [2, 3, 4];
-        } else if (pca >= 290000) {
-          bandaPersist = [1, 2, 3];
-        } else if (pca >= 225000) {
-          bandaPersist = [0, 1, 2];
-        } else if (pca >= 160000) {
-          bandaPersist = [0, 0, 1];
+        // 2025 => la tabla con final 150,000
+        if (pca >= 800000) {
+          bandaPersistenciaCrec = [16, 20, 21];
+        } else if (pca >= 725000) {
+          bandaPersistenciaCrec = [13, 15, 17];
+        } else if (pca >= 645000) {
+          bandaPersistenciaCrec = [11, 13, 15];
+        } else if (pca >= 540000) {
+          bandaPersistenciaCrec = [10, 12, 14];
+        } else if (pca >= 475000) {
+          bandaPersistenciaCrec = [7, 8, 10];
+        } else if (pca >= 410000) {
+          bandaPersistenciaCrec = [6, 7, 8];
+        } else if (pca >= 345000) {
+          bandaPersistenciaCrec = [4, 5, 7];
+        } else if (pca >= 275000) {
+          bandaPersistenciaCrec = [3, 4, 5];
+        } else if (pca >= 210000) {
+          bandaPersistenciaCrec = [2, 3, 4];
+        } else if (pca >= 150000) {
+          bandaPersistenciaCrec = [1, 2, 3];
         }
       }
 
+      // Determinamos en cuál de las 3 columnas cae (>=85, >=88, >=91)
       let indice = -1;
       if (persistencia >= 91) {
         indice = 2;
-      } else if (persistencia >= 86) {
+      } else if (persistencia >= 88) {
         indice = 1;
-      } else if (persistencia >= 81) {
+      } else if (persistencia >= 85) {
         indice = 0;
       } else {
         bandasDiferenciaUl.innerHTML += `
           <li>
-            <strong>No alcanzas el mínimo (81%) de persistencia.</strong>
+            <strong>No alcanzas el mínimo (85%) de persistencia (Crecimiento).</strong>
             Bono Persistencia = 0%
           </li>
         `;
         return;
       }
 
-      const bono = bandaPersist[indice] || 0;
+      const bonoCrec = bandaPersistenciaCrec[indice] || 0;
       bandasDiferenciaUl.innerHTML += `
         <li>
-          <strong>Porcentaje Bono Persistencia:</strong>
-          ${bono}%
+          <strong>Bono Persistencia (Crecimiento):</strong> 
+          ${bonoCrec}%
         </li>
       `;
     }
 
-    // ======= Helpers =======
+    // Funciones helper
     function formatPercent(value) {
       return value.toFixed(2) + "%";
+    }
+    function cleanCurrency(str) {
+      return str.replace(/[^0-9.-]/g, "");
     }
     function formatCurrencyNumberOnly(valueString) {
       let numericValue = valueString.replace(/[^\d.]/g, "");
       if (!numericValue) numericValue = "0";
       const num = parseFloat(numericValue) || 0;
       return formatCurrency(num);
-    }
-    function cleanCurrency(str) {
-      return str.replace(/[^0-9.-]/g, "");
     }
     function formatCurrency(value) {
       return new Intl.NumberFormat("es-MX", {
@@ -770,3 +908,4 @@
   </script>
 </body>
 </html>
+
